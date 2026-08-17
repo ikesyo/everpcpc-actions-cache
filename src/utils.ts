@@ -62,6 +62,14 @@ type FindObjectResult = {
   matchingKey: string;
 };
 
+function getCacheKeyFromObject(object: string, cacheFileName: string): string {
+  const suffix = `/${cacheFileName}`;
+  if (!object.endsWith(suffix)) {
+    throw new Error(`Unexpected cache object: ${object}`);
+  }
+  return object.slice(0, -suffix.length);
+}
+
 export async function findObject(
   op: opendal.Operator,
   key: string,
@@ -113,7 +121,11 @@ export async function findObject(
       }
     }
 
-    const result = { item: object, metadata, matchingKey: restoreKey };
+    const result = {
+      item: object,
+      metadata,
+      matchingKey: getCacheKeyFromObject(object, fn),
+    };
     core.debug(`Using latest ${JSON.stringify(result)}`);
     return result;
   }

@@ -57,8 +57,20 @@ async function build() {
 
   await esbuild.build({
     ...common,
+    entryPoints: ["src/restoreOnly.ts"],
+    outfile: "dist/restore-only/index.js",
+  });
+
+  await esbuild.build({
+    ...common,
     entryPoints: ["src/save.ts"],
     outfile: "dist/save/index.js",
+  });
+
+  await esbuild.build({
+    ...common,
+    entryPoints: ["src/saveOnly.ts"],
+    outfile: "dist/save-only/index.js",
   });
 
   copyNativeFiles("dist");

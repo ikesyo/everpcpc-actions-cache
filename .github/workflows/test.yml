@@ -133,3 +133,84 @@ jobs:
       - name: Verify cache files outside working directory
         shell: bash
         run: src/verify-cache-files.sh ${{ runner.os }} ~/test-cache
+
+  test-split-save:
+    needs: create-minio-bucket
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate files
+        shell: bash
+        run: src/create-cache-files.sh ${{ runner.os }} test-cache
+      - name: Save cache with save-only action
+        uses: ./save
+        env:
+          AWS_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: Q3AM3UQ867SPQQA43P2F
+          AWS_SECRET_ACCESS_KEY: zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG
+        with:
+          endpoint: play.min.io
+          bucket: actions-cache
+          root: opendal
+          use-fallback: false
+          key: test/split/${{ runner.os }}/${{ github.run_id }}/${{ github.sha }}
+          path: test-cache
+
+  test-split-restore:
+    needs: test-split-save
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore cache with restore-only action
+        id: cache
+        uses: ./restore
+        env:
+          AWS_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: Q3AM3UQ867SPQQA43P2F
+          AWS_SECRET_ACCESS_KEY: zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG
+        with:
+          endpoint: play.min.io
+          bucket: actions-cache
+          root: opendal
+          use-fallback: false
+          key: test/split/${{ runner.os }}/${{ github.run_id }}/${{ github.sha }}
+          path: test-cache
+      - name: Verify exact-match outputs
+        shell: bash
+        run: |
+          test '${{ steps.cache.outputs.cache-hit }}' = 'true'
+          test '${{ steps.cache.outputs.cache-primary-key }}' = 'test/split/${{ runner.os }}/${{ github.run_id }}/${{ github.sha }}'
+          test '${{ steps.cache.outputs.cache-matched-key }}' = 'test/split/${{ runner.os }}/${{ github.run_id }}/${{ github.sha }}'
+      - name: Verify cache files
+        shell: bash
+        run: src/verify-cache-files.sh ${{ runner.os }} test-cache
+
+  test-split-restore-keys:
+    needs: test-split-save
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore cache through restore-key with restore-only action
+        id: cache
+        uses: ./restore
+        env:
+          AWS_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: Q3AM3UQ867SPQQA43P2F
+          AWS_SECRET_ACCESS_KEY: zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG
+        with:
+          endpoint: play.min.io
+          bucket: actions-cache
+          root: opendal
+          use-fallback: false
+          key: test/split/${{ runner.os }}/${{ github.run_id }}/missing
+          restore-keys: test/split/${{ runner.os }}/${{ github.run_id }}/
+          path: test-cache
+      - name: Verify restore-key outputs
+        shell: bash
+        run: |
+          test '${{ steps.cache.outputs.cache-hit }}' = 'false'
+          test '${{ steps.cache.outputs.cache-primary-key }}' = 'test/split/${{ runner.os }}/${{ github.run_id }}/missing'
+          test '${{ steps.cache.outputs.cache-matched-key }}' = 'test/split/${{ runner.os }}/${{ github.run_id }}/${{ github.sha }}'
+      - name: Verify cache files
+        shell: bash
+        run: src/verify-cache-files.sh ${{ runner.os }} test-cache

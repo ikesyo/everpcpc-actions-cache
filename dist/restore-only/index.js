@@ -29463,16 +29463,6 @@ function warning(message, properties = {}) {
 function info(message) {
   process.stdout.write(message + os5.EOL);
 }
-function saveState(name, value) {
-  const filePath = process.env["GITHUB_STATE"] || "";
-  if (filePath) {
-    return issueFileCommand("STATE", prepareKeyValueMessage(name, value));
-  }
-  issueCommand("save-state", { name }, toCommandValue(value));
-}
-function getState(name) {
-  return process.env[`STATE_${name}`] || "";
-}
 
 // node_modules/.pnpm/@actions+cache@6.0.0/node_modules/@actions/cache/lib/cache.js
 var path6 = __toESM(require("path"), 1);
@@ -65517,20 +65507,30 @@ async function restoreImpl(stateProvider) {
 }
 
 // src/stateProvider.ts
-var StateProvider = class {
+var NullStateProvider = class {
+  constructor() {
+    this.stateToOutput = /* @__PURE__ */ new Map([
+      ["primary-key" /* PrimaryKey */, "cache-primary-key"],
+      ["matched-key" /* MatchedKey */, "cache-matched-key"]
+    ]);
+  }
   setState(key, value) {
-    saveState(key, value);
+    const output = this.stateToOutput.get(key);
+    if (output) {
+      setOutput(output, value);
+    }
   }
-  setFallbackMatchedKey(_value) {
+  setFallbackMatchedKey(value) {
+    setOutput("cache-matched-key", value);
   }
-  getState(key) {
-    return getState(key);
+  getState(_key) {
+    return "";
   }
 };
 
-// src/restore.ts
+// src/restoreOnly.ts
 process.on("uncaughtException", (e) => info("warning: " + e.message));
-restoreImpl(new StateProvider());
+restoreImpl(new NullStateProvider());
 /*! Bundled license information:
 
 undici/lib/web/fetch/body.js:

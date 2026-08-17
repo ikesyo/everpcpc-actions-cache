@@ -1,7 +1,7 @@
 import * as core from "@actions/core";
 import { restoreImpl } from "./restoreImpl";
-import { StateProvider } from "./stateProvider";
+import { NullStateProvider } from "./stateProvider";
 
 process.on("uncaughtException", (e) => core.info("warning: " + e.message));
 
-restoreImpl(new StateProvider());
+restoreImpl(new NullStateProvider());

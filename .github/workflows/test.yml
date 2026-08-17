@@ -136,7 +136,11 @@ jobs:
 
   test-split-save:
     needs: create-minio-bucket
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - name: Generate files
@@ -158,7 +162,11 @@ jobs:
 
   test-split-restore:
     needs: test-split-save
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - name: Restore cache with restore-only action
@@ -187,7 +195,11 @@ jobs:
 
   test-split-restore-keys:
     needs: test-split-save
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - name: Restore cache through restore-key with restore-only action
